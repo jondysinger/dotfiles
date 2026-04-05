@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+STATE_DIR="${TMUX_WORKSPACE_STATE_DIR:?TMUX_WORKSPACE_STATE_DIR is required}"
+DIR="${TMUX_WORKSPACE_DIR:-$PWD}"
+SERVER_FILE="$STATE_DIR/nvim_server"
+SERVER_PATH="$STATE_DIR/nvim.sock"
+
+mkdir -p "$STATE_DIR"
+rm -f "$SERVER_PATH"
+printf '%s\n' "$SERVER_PATH" > "$SERVER_FILE"
+
+cd "$DIR"
+exec nvim --listen "$SERVER_PATH"

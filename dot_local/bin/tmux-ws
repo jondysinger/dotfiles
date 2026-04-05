@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DIR="${1:-$(pwd)}"
+DIR="$(cd "$DIR" && pwd)"
+SESSION="$(basename "$DIR")"
+STATE_DIR="${TMPDIR:-/tmp}/tmux-workspace-${SESSION}"
+
+mkdir -p "$STATE_DIR"
+printf '%s\n' "$SESSION" > "$STATE_DIR/session_name"
+printf '%s\n' "$DIR" > "$STATE_DIR/workspace_dir"
+
+export TMUX_WORKSPACE_STATE_DIR="$STATE_DIR"
+export TMUX_WORKSPACE_SESSION_NAME="$SESSION"
+export TMUX_WORKSPACE_DIR="$DIR"
+
+if tmux has-session -t "$SESSION" 2>/dev/null; then
+  tmux attach -t "$SESSION"
+  exit 0
+fi
+
+# Start session with nvim in the first pane. Use tmux's per-session
+# environment flags so the initial pane doesn't inherit another session's
+# workspace state.
+tmux new-session -d -s "$SESSION" -c "$DIR" -n workspace \
+  -e TMUX_WORKSPACE_STATE_DIR="$STATE_DIR" \
+  -e TMUX_WORKSPACE_SESSION_NAME="$SESSION" \
+  -e TMUX_WORKSPACE_DIR="$DIR" \
+  "tmux-nvim"
+
+WINDOW_INDEX="$(tmux list-windows -t "$SESSION" -F "#{window_index}" | head -n 1)"
+if [ -z "$WINDOW_INDEX" ]; then
+  echo "Failed to determine tmux window index"
+  exit 1
+fi
+
+FIRST_PANE_ID="$(tmux list-panes -t "$SESSION":"$WINDOW_INDEX" -F "#{pane_id}" | head -n 1)"
+if [ -z "$FIRST_PANE_ID" ]; then
+  echo "Failed to determine tmux pane id"
+  exit 1
+fi
+
+printf '%s\n' "$FIRST_PANE_ID" > "$STATE_DIR/nvim_pane_id"
+
+# Ensure session env is set for subsequent panes
+TMUX_WORKSPACE_STATE_DIR="$STATE_DIR" \
+TMUX_WORKSPACE_SESSION_NAME="$SESSION" \
+TMUX_WORKSPACE_DIR="$DIR" \
+  tmux set-environment -t "$SESSION" TMUX_WORKSPACE_STATE_DIR "$STATE_DIR"
+TMUX_WORKSPACE_STATE_DIR="$STATE_DIR" \
+TMUX_WORKSPACE_SESSION_NAME="$SESSION" \
+TMUX_WORKSPACE_DIR="$DIR" \
+  tmux set-environment -t "$SESSION" TMUX_WORKSPACE_SESSION_NAME "$SESSION"
+TMUX_WORKSPACE_STATE_DIR="$STATE_DIR" \
+TMUX_WORKSPACE_SESSION_NAME="$SESSION" \
+TMUX_WORKSPACE_DIR="$DIR" \
+  tmux set-environment -t "$SESSION" TMUX_WORKSPACE_DIR "$DIR"
+
+# Split for shell pane
+TMUX_WORKSPACE_STATE_DIR="$STATE_DIR" \
+TMUX_WORKSPACE_SESSION_NAME="$SESSION" \
+TMUX_WORKSPACE_DIR="$DIR" \
+  tmux split-window -v -p 25 -t "$FIRST_PANE_ID" -c "$DIR" "tmux-shell"
+
+# Force a size refresh so Neovim gets the correct pane dimensions
+TMUX_WORKSPACE_STATE_DIR="$STATE_DIR" \
+TMUX_WORKSPACE_SESSION_NAME="$SESSION" \
+TMUX_WORKSPACE_DIR="$DIR" \
+  tmux resize-pane -Z -t "$FIRST_PANE_ID"
+TMUX_WORKSPACE_STATE_DIR="$STATE_DIR" \
+TMUX_WORKSPACE_SESSION_NAME="$SESSION" \
+TMUX_WORKSPACE_DIR="$DIR" \
+  tmux resize-pane -Z -t "$FIRST_PANE_ID"
+
+# Focus nvim pane
+TMUX_WORKSPACE_STATE_DIR="$STATE_DIR" \
+TMUX_WORKSPACE_SESSION_NAME="$SESSION" \
+TMUX_WORKSPACE_DIR="$DIR" \
+  tmux select-pane -t "$FIRST_PANE_ID"
+
+tmux attach -t "$SESSION"

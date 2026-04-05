@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selection="$(
+  tmux list-windows -F "#{window_index}\t#{window_name}\t#{?window_active,current,}" |
+    fzf \
+      --prompt="Shell tab > " \
+      --delimiter=$'\t' \
+      --with-nth=1,2,3 \
+      --layout=reverse \
+      --border \
+      --height=100%
+)"
+
+if [ -z "$selection" ]; then
+  exit 0
+fi
+
+window_index="${selection%%$'\t'*}"
+tmux select-window -t "$window_index"

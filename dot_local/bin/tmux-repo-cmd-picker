@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+STATE_DIR="${TMUX_WORKSPACE_STATE_DIR:?TMUX_WORKSPACE_STATE_DIR is required}"
+SESSION="${TMUX_WORKSPACE_SESSION_NAME:?TMUX_WORKSPACE_SESSION_NAME is required}"
+WORKSPACE_DIR="${TMUX_WORKSPACE_DIR:-$PWD}"
+COMMANDS_FILE="$WORKSPACE_DIR/.workspace/tmux-commands.toml"
+TERMINAL_PANE_FILE="$STATE_DIR/terminal_pane_id"
+
+if [ ! -f "$COMMANDS_FILE" ]; then
+  echo "No repo command file found at:"
+  echo "  $COMMANDS_FILE"
+  exit 1
+fi
+
+if [ ! -f "$TERMINAL_PANE_FILE" ]; then
+  echo "No terminal pane id found at:"
+  echo "  $TERMINAL_PANE_FILE"
+  exit 1
+fi
+
+TERMINAL_PANE="$(cat "$TERMINAL_PANE_FILE")"
+
+trim() {
+  local value="$1"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
+}
+
+unquote() {
+  local value
+  value="$(trim "$1")"
+  if [[ "$value" == \"* && "$value" == *\" ]]; then
+    value="${value:1:${#value}-2}"
+  fi
+  value="${value//\\\"/\"}"
+  value="${value//\\\\/\\}"
+  printf '%s' "$value"
+}
+
+append_command_row() {
+  if [ -n "${current_name:-}" ] && [ -n "${current_run:-}" ]; then
+    COMMAND_ROWS+=("${current_name}"$'\t'"${current_run}"$'\t'"${current_cwd:-}"$'\t'"${current_desc:-}")
+  fi
+}
+
+COMMAND_ROWS=()
+current_name=""
+current_run=""
+current_cwd=""
+current_desc=""
+
+while IFS= read -r raw_line || [ -n "$raw_line" ]; do
+  line="$(trim "$raw_line")"
+
+  [ -n "$line" ] || continue
+  [[ "$line" == \#* ]] && continue
+
+  if [ "$line" = "[[command]]" ]; then
+    append_command_row
+    current_name=""
+    current_run=""
+    current_cwd=""
+    current_desc=""
+    continue
+  fi
+
+  key="${line%%=*}"
+  value="${line#*=}"
+  key="$(trim "$key")"
+  value="$(unquote "$value")"
+  value="${value//$'\t'/ }"
+  value="${value//$'\n'/ }"
+
+  case "$key" in
+    name) current_name="$value" ;;
+    run) current_run="$value" ;;
+    cwd) current_cwd="$value" ;;
+    description) current_desc="$value" ;;
+  esac
+done < "$COMMANDS_FILE"
+
+append_command_row
+
+if [ "${#COMMAND_ROWS[@]}" -eq 0 ]; then
+  echo "No commands found in:"
+  echo "  $COMMANDS_FILE"
+  exit 1
+fi
+
+FZF_INPUT=()
+for row in "${COMMAND_ROWS[@]}"; do
+  IFS=$'\t' read -r name run cwd desc <<< "$row"
+  label="$name"
+  if [ -n "$desc" ]; then
+    label="$label [$desc]"
+  fi
+  FZF_INPUT+=("$label"$'\t'"$row")
+done
+
+selection="$(
+  printf '%s\n' "${FZF_INPUT[@]}" |
+    fzf \
+      --prompt="Repo command > " \
+      --delimiter=$'\t' \
+      --with-nth=1 \
+      --height=100% \
+      --layout=reverse \
+      --border \
+      --header="$WORKSPACE_DIR"
+)"
+
+if [ -z "$selection" ]; then
+  exit 1
+fi
+
+selection="${selection#*$'\t'}"
+IFS=$'\t' read -r name run cwd desc <<< "$selection"
+
+if [ -n "$cwd" ]; then
+  if [[ "$cwd" = /* ]]; then
+    target_cwd="$cwd"
+  else
+    target_cwd="$WORKSPACE_DIR/$cwd"
+  fi
+else
+  target_cwd="$WORKSPACE_DIR"
+fi
+
+shell_bin="${SHELL:-/bin/zsh}"
+pane_command="$run; exec $(printf '%q' "$shell_bin") -l"
+
+NEW_PANE="$(
+  tmux split-window -P -F "#{pane_id}" -v -p 50 -t "$TERMINAL_PANE" -c "$target_cwd" \
+    "$shell_bin" -lc "$pane_command"
+)"
+
+if [ -z "$NEW_PANE" ]; then
+  echo "Failed to create new pane"
+  exit 1
+fi
+
+tmux select-pane -t "$NEW_PANE"
+tmux display-message "Opened: $name"

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FILE_PATH="${1:?file path required}"
+STATE_DIR="${TMUX_WORKSPACE_STATE_DIR:?TMUX_WORKSPACE_STATE_DIR is required}"
+SERVER_FILE="$STATE_DIR/nvim_server"
+
+if [[ "$FILE_PATH" != /* ]]; then
+  FILE_PATH="${TMUX_WORKSPACE_DIR:-$PWD}/${FILE_PATH}"
+fi
+
+if [ -f "$SERVER_FILE" ]; then
+  SERVER_PATH="$(cat "$SERVER_FILE")"
+  if nvim --server "$SERVER_PATH" --remote-expr '1' >/dev/null 2>&1; then
+    exec nvim --server "$SERVER_PATH" --remote-silent "$FILE_PATH"
+  fi
+fi
+
+if [ -f "$SERVER_FILE" ]; then
+  SERVER_PATH="$(cat "$SERVER_FILE")"
+  printf '%s\n' "Neovim server is unavailable: $SERVER_PATH" >&2
+else
+  printf '%s\n' "Neovim server file not found: $SERVER_FILE" >&2
+fi
+exit 1

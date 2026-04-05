@@ -1,0 +1,5 @@
+# neovim related
+.nvimlog
+
+# tmux plugins
+dot_config/tmux/plugins/

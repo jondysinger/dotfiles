@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+STATE_DIR="${TMUX_WORKSPACE_STATE_DIR:?TMUX_WORKSPACE_STATE_DIR is required}"
+CHOICE="$(mktemp)"
+YAZI_CWD_FILE="$STATE_DIR/yazi-cwd"
+NVIM_PANE_FILE="$STATE_DIR/nvim_pane_id"
+trap 'rm -f "$CHOICE"' EXIT
+
+if ! command -v yazi >/dev/null 2>&1; then
+  printf '%s\n' "yazi is not installed or not on PATH" >&2
+  exit 1
+fi
+
+if [ -f "$YAZI_CWD_FILE" ]; then
+  START_DIR="$(cat "$YAZI_CWD_FILE")"
+else
+  START_DIR="${1:-$PWD}"
+fi
+
+yazi --chooser-file="$CHOICE" --cwd-file="$YAZI_CWD_FILE" "$START_DIR" "${@:2}"
+
+if [ -s "$CHOICE" ]; then
+  FILE="$(head -1 "$CHOICE")"
+  if [ -f "$NVIM_PANE_FILE" ]; then
+    NVIM_PANE_ID="$(cat "$NVIM_PANE_FILE")"
+    if [ -n "$NVIM_PANE_ID" ]; then
+      NVIM_WINDOW_TARGET="$(tmux display-message -p -t "$NVIM_PANE_ID" '#{session_name}:#{window_index}')"
+      tmux select-window -t "$NVIM_WINDOW_TARGET"
+      tmux select-pane -t "$NVIM_PANE_ID"
+    fi
+  fi
+  tmux-nvim-open "$FILE"
+fi
