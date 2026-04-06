@@ -74,7 +74,13 @@ return {
         },
       })
       require("mini.pick").setup()
-      require("mini.starter").setup()
+      local starter = require("mini.starter")
+      starter.setup({
+        items = {
+          starter.sections.recent_files(10, true, true),
+          starter.sections.builtin_actions(),
+        },
+      })
       require("mini.snippets").setup()
       require("mini.trailspace").setup()
       vim.api.nvim_set_hl(0, "MiniStatuslineDiagnostics", { fg = "#eb7f92" })
