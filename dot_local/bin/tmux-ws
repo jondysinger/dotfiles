@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+# tmux-ws [DIR]
+#
+# Create or attach to a tmux workspace session rooted at DIR (default: cwd).
+# The session is named after the directory basename. On first launch it opens
+# nvim in the top pane (via tmux-nvim) and an inner shell session in a 25%
+# bottom split (via tmux-shell). Workspace state is stored under
+# $TMPDIR/tmux-workspace-<SESSION> and exposed via TMUX_WORKSPACE_* env vars
+# so the other tmux-* helpers can locate shared state (socket paths, pane
+# IDs, etc.).
 set -euo pipefail
 
 DIR="${1:-$(pwd)}"

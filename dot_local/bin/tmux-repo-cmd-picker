@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+# tmux-repo-cmd-picker
+#
+# fzf picker for project-specific commands defined in
+# .workspace/tmux-commands.toml inside the workspace directory. Parses the
+# TOML [[command]] entries (name, run, cwd, description) without external
+# dependencies. When a command is selected it opens a new tmux window named
+# after the command, runs it there, and drops into an interactive shell when
+# it finishes. Requires TMUX_WORKSPACE_STATE_DIR.
 set -euo pipefail
 
 STATE_DIR="${TMUX_WORKSPACE_STATE_DIR:?TMUX_WORKSPACE_STATE_DIR is required}"

@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# tmux-nvim
+#
+# Start nvim listening on a Unix socket so other panes can send files to it.
+# The socket path is written to $TMUX_WORKSPACE_STATE_DIR/nvim_server so that
+# tmux-nvim-open can discover it. Intended to be launched by tmux-ws as the
+# main editor pane in a workspace session.
 set -euo pipefail
 
 STATE_DIR="${TMUX_WORKSPACE_STATE_DIR:?TMUX_WORKSPACE_STATE_DIR is required}"

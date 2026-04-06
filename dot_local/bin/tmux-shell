@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+# tmux-shell
+#
+# Start (or attach to) an inner tmux session used as the shell pane inside a
+# workspace. The inner tmux runs on its own socket
+# ($TMUX_WORKSPACE_STATE_DIR/inner-tmux.sock) and uses the tmux-inner.conf
+# config. Exposes workspace state to the inner session so helpers like
+# tmux-repo-cmd-picker can open windows relative to the current workspace.
+# Intended to be launched by tmux-ws.
 set -euo pipefail
 
 STATE_DIR="${TMUX_WORKSPACE_STATE_DIR:?TMUX_WORKSPACE_STATE_DIR is required}"

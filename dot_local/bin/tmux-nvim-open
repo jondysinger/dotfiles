@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# tmux-nvim-open <file>
+#
+# Open FILE in the running nvim server for the current workspace. Resolves
+# relative paths against $TMUX_WORKSPACE_DIR. Reads the server socket path
+# from $TMUX_WORKSPACE_STATE_DIR/nvim_server and uses --remote-silent to
+# instruct nvim to load the file without stealing focus. Exits non-zero with
+# an error message if the server file is missing or the socket is unreachable.
 set -euo pipefail
 
 FILE_PATH="${1:?file path required}"

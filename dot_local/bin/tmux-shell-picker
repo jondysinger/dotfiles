@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# tmux-shell-picker
+#
+# fzf picker for switching between tmux windows in the current session.
+# Displays each window by index and name (marking the active one), then
+# switches focus to the selected window. Exits silently if no selection
+# is made.
 set -euo pipefail
 
 selection="$(

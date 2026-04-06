@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# tmux-file-picker [start-dir]
+#
+# Open yazi as a file chooser. Persists yazi's last working directory in
+# state so subsequent invocations resume where you left off. When a file is
+# selected, switches focus to the nvim pane (looked up from state) and opens
+# the file there via tmux-nvim-open. Requires yazi to be installed and
+# TMUX_WORKSPACE_STATE_DIR to be set.
 set -euo pipefail
 
 STATE_DIR="${TMUX_WORKSPACE_STATE_DIR:?TMUX_WORKSPACE_STATE_DIR is required}"
