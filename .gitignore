@@ -3,3 +3,6 @@
 
 # tmux plugins
 dot_config/tmux/plugins/
+
+# workspace related
+.workspace/
