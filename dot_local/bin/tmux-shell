@@ -8,10 +8,12 @@ CONFIG_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux-inner.conf"
 SESSION_NAME="shell"
 
 mkdir -p "$STATE_DIR"
-printf '%s\n' "${TMUX_PANE:?TMUX_PANE is required}" > "$STATE_DIR/terminal_pane_id"
 
 if ! tmux -S "$SOCKET_PATH" has-session -t "$SESSION_NAME" 2>/dev/null; then
   tmux -f "$CONFIG_PATH" -S "$SOCKET_PATH" new-session -d -s "$SESSION_NAME" -n shell -c "$WORKSPACE_DIR" "${SHELL:-/bin/zsh}" -l
 fi
+
+tmux -S "$SOCKET_PATH" set-environment -t "$SESSION_NAME" TMUX_WORKSPACE_STATE_DIR "$STATE_DIR"
+tmux -S "$SOCKET_PATH" set-environment -t "$SESSION_NAME" TMUX_WORKSPACE_DIR "$WORKSPACE_DIR"
 
 exec tmux -f "$CONFIG_PATH" -S "$SOCKET_PATH" attach -t "$SESSION_NAME"

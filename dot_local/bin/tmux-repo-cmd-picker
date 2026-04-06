@@ -2,24 +2,26 @@
 set -euo pipefail
 
 STATE_DIR="${TMUX_WORKSPACE_STATE_DIR:?TMUX_WORKSPACE_STATE_DIR is required}"
-SESSION="${TMUX_WORKSPACE_SESSION_NAME:?TMUX_WORKSPACE_SESSION_NAME is required}"
-WORKSPACE_DIR="${TMUX_WORKSPACE_DIR:-$PWD}"
-COMMANDS_FILE="$WORKSPACE_DIR/.workspace/tmux-commands.toml"
-TERMINAL_PANE_FILE="$STATE_DIR/terminal_pane_id"
+INNER_SOCKET="$STATE_DIR/inner-tmux.sock"
+WORKSPACE_DIR_FILE="$STATE_DIR/workspace_dir"
+FIELD_SEP=$'\x1f'
 
+if [ -n "${TMUX_WORKSPACE_DIR:-}" ]; then
+  WORKSPACE_DIR="$TMUX_WORKSPACE_DIR"
+elif [ -f "$WORKSPACE_DIR_FILE" ]; then
+  WORKSPACE_DIR="$(cat "$WORKSPACE_DIR_FILE")"
+else
+  echo "No workspace dir found in TMUX_WORKSPACE_DIR or:"
+  echo "  $WORKSPACE_DIR_FILE"
+  exit 1
+fi
+
+COMMANDS_FILE="$WORKSPACE_DIR/.workspace/tmux-commands.toml"
 if [ ! -f "$COMMANDS_FILE" ]; then
   echo "No repo command file found at:"
   echo "  $COMMANDS_FILE"
   exit 1
 fi
-
-if [ ! -f "$TERMINAL_PANE_FILE" ]; then
-  echo "No terminal pane id found at:"
-  echo "  $TERMINAL_PANE_FILE"
-  exit 1
-fi
-
-TERMINAL_PANE="$(cat "$TERMINAL_PANE_FILE")"
 
 trim() {
   local value="$1"
@@ -41,7 +43,7 @@ unquote() {
 
 append_command_row() {
   if [ -n "${current_name:-}" ] && [ -n "${current_run:-}" ]; then
-    COMMAND_ROWS+=("${current_name}"$'\t'"${current_run}"$'\t'"${current_cwd:-}"$'\t'"${current_desc:-}")
+    COMMAND_ROWS+=("${current_name}${FIELD_SEP}${current_run}${FIELD_SEP}${current_cwd:-}${FIELD_SEP}${current_desc:-}")
   fi
 }
 
@@ -91,19 +93,19 @@ fi
 
 FZF_INPUT=()
 for row in "${COMMAND_ROWS[@]}"; do
-  IFS=$'\t' read -r name run cwd desc <<< "$row"
+  IFS="$FIELD_SEP" read -r name run cwd desc <<< "$row"
   label="$name"
   if [ -n "$desc" ]; then
     label="$label [$desc]"
   fi
-  FZF_INPUT+=("$label"$'\t'"$row")
+  FZF_INPUT+=("${label}${FIELD_SEP}${row}")
 done
 
 selection="$(
   printf '%s\n' "${FZF_INPUT[@]}" |
     fzf \
       --prompt="Repo command > " \
-      --delimiter=$'\t' \
+      --delimiter="$FIELD_SEP" \
       --with-nth=1 \
       --height=100% \
       --layout=reverse \
@@ -115,9 +117,10 @@ if [ -z "$selection" ]; then
   exit 1
 fi
 
-selection="${selection#*$'\t'}"
-IFS=$'\t' read -r name run cwd desc <<< "$selection"
+selection="${selection#*"$FIELD_SEP"}"
+IFS="$FIELD_SEP" read -r name run cwd desc <<< "$selection"
 
+target_cwd=""
 if [ -n "$cwd" ]; then
   if [[ "$cwd" = /* ]]; then
     target_cwd="$cwd"
@@ -125,21 +128,27 @@ if [ -n "$cwd" ]; then
     target_cwd="$WORKSPACE_DIR/$cwd"
   fi
 else
-  target_cwd="$WORKSPACE_DIR"
+  ACTIVE_WINDOW_ID="$(
+    tmux -S "$INNER_SOCKET" list-windows -F '#{?window_active,#{window_id},}' |
+      sed -n '/./{p;q;}'
+  )"
+  if [ -n "$ACTIVE_WINDOW_ID" ]; then
+    target_cwd="$(
+      tmux -S "$INNER_SOCKET" list-panes -t "$ACTIVE_WINDOW_ID" -F '#{?pane_active,#{pane_current_path},}' |
+        sed -n '/./{p;q;}'
+    )"
+  fi
 fi
 
 shell_bin="${SHELL:-/bin/zsh}"
 pane_command="$run; exec $(printf '%q' "$shell_bin") -l"
 
-NEW_PANE="$(
-  tmux split-window -P -F "#{pane_id}" -v -p 50 -t "$TERMINAL_PANE" -c "$target_cwd" \
-    "$shell_bin" -lc "$pane_command"
-)"
-
-if [ -z "$NEW_PANE" ]; then
-  echo "Failed to create new pane"
-  exit 1
+if [ -n "$target_cwd" ]; then
+  tmux -S "$INNER_SOCKET" new-window -n "$name" -c "$target_cwd" \
+    "$shell_bin" -c "$pane_command"
+else
+  tmux -S "$INNER_SOCKET" new-window -n "$name" \
+    "$shell_bin" -c "$pane_command"
 fi
 
-tmux select-pane -t "$NEW_PANE"
 tmux display-message "Opened: $name"
