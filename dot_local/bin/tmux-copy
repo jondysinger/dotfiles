@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# tmux-copy
+#
+# Write stdin to the system clipboard. Used as a copy-pipe target in tmux
+# copy-mode. Supports Wayland (wl-copy), macOS (pbcopy), and X11 (xclip/xsel).
+
+if command -v wl-copy >/dev/null 2>&1; then
+  wl-copy
+elif command -v pbcopy >/dev/null 2>&1; then
+  pbcopy
+elif command -v xclip >/dev/null 2>&1; then
+  xclip -selection clipboard
+elif command -v xsel >/dev/null 2>&1; then
+  xsel --clipboard --input
+fi
