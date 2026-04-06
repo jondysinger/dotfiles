@@ -2,7 +2,7 @@ return {
   {
     "nvim-mini/mini.nvim",
     version = false,
-    event = { "BufReadPre", "BufNewFile" },
+    event = { "BufReadPre", "BufNewFile", "VimEnter" },
     config = function()
       local clue = require("mini.clue")
       local statusline = require("mini.statusline")
@@ -74,6 +74,7 @@ return {
         },
       })
       require("mini.pick").setup()
+      require("mini.starter").setup()
       require("mini.snippets").setup()
       require("mini.trailspace").setup()
       vim.api.nvim_set_hl(0, "MiniStatuslineDiagnostics", { fg = "#eb7f92" })
