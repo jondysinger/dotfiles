@@ -86,6 +86,13 @@ return {
       capabilities = capabilities,
     })
 
+    vim.lsp.config("eslint", {
+      capabilities = capabilities,
+      settings = {
+        workingDirectory = { mode = "auto" },
+      },
+    })
+
     -- Python
     vim.lsp.config("pyright", {
       capabilities = capabilities,
@@ -98,6 +105,7 @@ return {
       "rust_analyzer",
       "csharp_ls",
       "ts_ls",
+      "eslint",
       "pyright",
     })
   end,
