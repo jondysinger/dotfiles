@@ -77,7 +77,7 @@ return {
     })
 
     -- C#
-    vim.lsp.config("roslyn_ls", {
+    vim.lsp.config("csharp_ls", {
       capabilities = capabilities,
     })
 
@@ -96,7 +96,7 @@ return {
       "lua_ls",
       "nil_ls",
       "rust_analyzer",
-      "roslyn_ls",
+      "csharp_ls",
       "ts_ls",
       "pyright",
     })
