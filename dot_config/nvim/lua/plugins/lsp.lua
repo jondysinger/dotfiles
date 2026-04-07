@@ -76,7 +76,29 @@ return {
       },
     })
 
+    -- C#
+    vim.lsp.config("roslyn_ls", {
+      capabilities = capabilities,
+    })
+
+    -- JavaScript / TypeScript
+    vim.lsp.config("ts_ls", {
+      capabilities = capabilities,
+    })
+
+    -- Python
+    vim.lsp.config("pyright", {
+      capabilities = capabilities,
+    })
+
     -- Enable all configured servers
-    vim.lsp.enable({ "lua_ls", "nil_ls", "rust_analyzer" })
+    vim.lsp.enable({
+      "lua_ls",
+      "nil_ls",
+      "rust_analyzer",
+      "roslyn_ls",
+      "ts_ls",
+      "pyright",
+    })
   end,
 }
