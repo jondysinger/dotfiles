@@ -48,6 +48,9 @@ end, { desc = "Find buffers" })
 map("n", "<leader>fh", function()
   require("mini.pick").builtin.help()
 end, { desc = "Help tags" })
+map("n", "<leader>fd", function()
+  require("mini.extra").pickers.diagnostic()
+end, { desc = "Find diagnostics" })
 
 -- Helpers for linking file references in AI tools
 map("n", "<leader>ac", function()

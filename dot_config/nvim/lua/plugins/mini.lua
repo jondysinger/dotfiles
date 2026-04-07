@@ -73,6 +73,7 @@ return {
           animation = require("mini.indentscope").gen_animation.none(),
         },
       })
+      require("mini.extra").setup()
       require("mini.pick").setup()
       local starter = require("mini.starter")
       starter.setup({
