@@ -10,7 +10,7 @@
 set -euo pipefail
 
 STATE_DIR="${TMUX_WORKSPACE_STATE_DIR:?TMUX_WORKSPACE_STATE_DIR is required}"
-INNER_SOCKET="$STATE_DIR/inner-tmux.sock"
+INNER_SOCKET="/tmp/tmux-ws-$(printf '%s' "$STATE_DIR" | cksum | cut -d' ' -f1).sock"
 WORKSPACE_DIR_FILE="$STATE_DIR/workspace_dir"
 FIELD_SEP=$'\x1f'
 
