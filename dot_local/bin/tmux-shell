@@ -2,8 +2,8 @@
 # tmux-shell
 #
 # Start (or attach to) an inner tmux session used as the shell pane inside a
-# workspace. The inner tmux runs on its own socket
-# ($TMUX_WORKSPACE_STATE_DIR/inner-tmux.sock) and uses the tmux-inner.conf
+# workspace. The inner tmux runs on its own socket (a short hash-based path
+# under /tmp to stay within Unix socket path limits) and uses the tmux-inner.conf
 # config. Exposes workspace state to the inner session so helpers like
 # tmux-repo-cmd-picker can open windows relative to the current workspace.
 # Intended to be launched by tmux-ws.
@@ -11,7 +11,7 @@ set -euo pipefail
 
 STATE_DIR="${TMUX_WORKSPACE_STATE_DIR:?TMUX_WORKSPACE_STATE_DIR is required}"
 WORKSPACE_DIR="${TMUX_WORKSPACE_DIR:-$PWD}"
-SOCKET_PATH="$STATE_DIR/inner-tmux.sock"
+SOCKET_PATH="/tmp/tmux-ws-$(printf '%s' "$STATE_DIR" | cksum | cut -d' ' -f1).sock"
 CONFIG_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux-inner.conf"
 SESSION_NAME="shell"
 
