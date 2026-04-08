@@ -12,7 +12,8 @@ set -euo pipefail
 
 DIR="${1:-$(pwd)}"
 DIR="$(cd "$DIR" && pwd)"
-SESSION="$(basename "$DIR")"
+SESSION_RAW="$(basename "$DIR")"
+SESSION="$(printf '%s' "$SESSION_RAW" | tr '.:' '__')"
 STATE_DIR="${TMPDIR:-/tmp}/tmux-workspace-${SESSION}"
 
 mkdir -p "$STATE_DIR"
@@ -23,8 +24,8 @@ export TMUX_WORKSPACE_STATE_DIR="$STATE_DIR"
 export TMUX_WORKSPACE_SESSION_NAME="$SESSION"
 export TMUX_WORKSPACE_DIR="$DIR"
 
-if tmux has-session -t "$SESSION" 2>/dev/null; then
-  tmux attach -t "$SESSION"
+if tmux has-session -t "=$SESSION" 2>/dev/null; then
+  tmux attach -t "=$SESSION"
   exit 0
 fi
 
@@ -37,13 +38,13 @@ tmux new-session -d -s "$SESSION" -c "$DIR" -n workspace \
   -e TMUX_WORKSPACE_DIR="$DIR" \
   "tmux-nvim"
 
-WINDOW_INDEX="$(tmux list-windows -t "$SESSION" -F "#{window_index}" | head -n 1)"
+WINDOW_INDEX="$(tmux list-windows -t "=$SESSION" -F "#{window_index}" | head -n 1)"
 if [ -z "$WINDOW_INDEX" ]; then
   echo "Failed to determine tmux window index"
   exit 1
 fi
 
-FIRST_PANE_ID="$(tmux list-panes -t "$SESSION":"$WINDOW_INDEX" -F "#{pane_id}" | head -n 1)"
+FIRST_PANE_ID="$(tmux list-panes -t "=$SESSION":"$WINDOW_INDEX" -F "#{pane_id}" | head -n 1)"
 if [ -z "$FIRST_PANE_ID" ]; then
   echo "Failed to determine tmux pane id"
   exit 1
@@ -55,15 +56,15 @@ printf '%s\n' "$FIRST_PANE_ID" > "$STATE_DIR/nvim_pane_id"
 TMUX_WORKSPACE_STATE_DIR="$STATE_DIR" \
 TMUX_WORKSPACE_SESSION_NAME="$SESSION" \
 TMUX_WORKSPACE_DIR="$DIR" \
-  tmux set-environment -t "$SESSION" TMUX_WORKSPACE_STATE_DIR "$STATE_DIR"
+  tmux set-environment -t "=$SESSION" TMUX_WORKSPACE_STATE_DIR "$STATE_DIR"
 TMUX_WORKSPACE_STATE_DIR="$STATE_DIR" \
 TMUX_WORKSPACE_SESSION_NAME="$SESSION" \
 TMUX_WORKSPACE_DIR="$DIR" \
-  tmux set-environment -t "$SESSION" TMUX_WORKSPACE_SESSION_NAME "$SESSION"
+  tmux set-environment -t "=$SESSION" TMUX_WORKSPACE_SESSION_NAME "$SESSION"
 TMUX_WORKSPACE_STATE_DIR="$STATE_DIR" \
 TMUX_WORKSPACE_SESSION_NAME="$SESSION" \
 TMUX_WORKSPACE_DIR="$DIR" \
-  tmux set-environment -t "$SESSION" TMUX_WORKSPACE_DIR "$DIR"
+  tmux set-environment -t "=$SESSION" TMUX_WORKSPACE_DIR "$DIR"
 
 # Split for shell pane
 TMUX_WORKSPACE_STATE_DIR="$STATE_DIR" \
@@ -87,4 +88,4 @@ TMUX_WORKSPACE_SESSION_NAME="$SESSION" \
 TMUX_WORKSPACE_DIR="$DIR" \
   tmux select-pane -t "$FIRST_PANE_ID"
 
-tmux attach -t "$SESSION"
+tmux attach -t "=$SESSION"
