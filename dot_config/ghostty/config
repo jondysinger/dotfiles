@@ -14,6 +14,4 @@ shell-integration-features = cursor,sudo,title
 macos-option-as-alt = true
 macos-titlebar-style = tabs
 
-background-opacity = 0.95
-
 confirm-close-surface = false
