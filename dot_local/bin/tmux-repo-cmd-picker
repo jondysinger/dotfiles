@@ -136,16 +136,7 @@ if [ -n "$cwd" ]; then
     target_cwd="$WORKSPACE_DIR/$cwd"
   fi
 else
-  ACTIVE_WINDOW_ID="$(
-    tmux -S "$INNER_SOCKET" list-windows -F '#{?window_active,#{window_id},}' |
-      sed -n '/./{p;q;}'
-  )"
-  if [ -n "$ACTIVE_WINDOW_ID" ]; then
-    target_cwd="$(
-      tmux -S "$INNER_SOCKET" list-panes -t "$ACTIVE_WINDOW_ID" -F '#{?pane_active,#{pane_current_path},}' |
-        sed -n '/./{p;q;}'
-    )"
-  fi
+  target_cwd="$(tmux -S "$INNER_SOCKET" display-message -p '#{session_path}')"
 fi
 
 shell_bin="${SHELL:-/bin/zsh}"
