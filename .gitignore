@@ -6,3 +6,6 @@ dot_config/tmux/plugins/
 
 # workspace related
 .workspace/
+
+# codex related
+.codex
