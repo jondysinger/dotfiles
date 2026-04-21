@@ -14,7 +14,10 @@ autocmd("BufWritePre", {
   group = augroup("TrimWhitespace", { clear = true }),
   pattern = "*",
   callback = function()
-    MiniTrailspace.trim()
+    local ok, trailspace = pcall(require, "mini.trailspace")
+    if ok and trailspace then
+      trailspace.trim()
+    end
   end,
 })
 
