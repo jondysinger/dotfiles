@@ -13,6 +13,9 @@ return {
   },
   opts = {
     formatters = {
+      black = {
+        prepend_args = { "--line-length", "120" },
+      },
       csharpier = {
         command = function()
           local exepath = vim.fn.exepath("csharpier")
