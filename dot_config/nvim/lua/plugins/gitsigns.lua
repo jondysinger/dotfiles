@@ -9,10 +9,10 @@ return {
     },
     keys = {
       {
-        "]c",
+        "]h",
         function()
           if vim.wo.diff then
-            vim.cmd.normal({ "]c", bang = true })
+            vim.cmd.normal({ "]h", bang = true })
           else
             require("gitsigns").nav_hunk("next")
           end
@@ -20,10 +20,10 @@ return {
         desc = "Next git hunk",
       },
       {
-        "[c",
+        "[h",
         function()
           if vim.wo.diff then
-            vim.cmd.normal({ "[c", bang = true })
+            vim.cmd.normal({ "[h", bang = true })
           else
             require("gitsigns").nav_hunk("prev")
           end
@@ -35,7 +35,7 @@ return {
         function()
           require("gitsigns").preview_hunk_inline()
         end,
-        desc = "Preview git hunk inline (not popup)",
+        desc = "Preview git hunk inline",
       },
       {
         "<leader>gb",
@@ -79,7 +79,7 @@ return {
         function()
           require("gitsigns").undo_stage_hunk()
         end,
-        desc = "Undo stage hunk",
+        desc = "Undo staged hunk",
       },
       {
         "<leader>gd",
