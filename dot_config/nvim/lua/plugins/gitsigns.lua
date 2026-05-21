@@ -31,6 +31,13 @@ return {
         desc = "Previous git hunk",
       },
       {
+        "<leader>gg",
+        function()
+          require("gitsigns").preview_hunk_inline()
+        end,
+        desc = "Preview git hunk inline",
+      },
+      {
         "<leader>gb",
         function()
           require("gitsigns").blame_line({ full = true })
