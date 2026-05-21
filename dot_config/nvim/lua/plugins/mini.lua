@@ -29,6 +29,7 @@ return {
         clues = {
           { mode = "n", keys = "<Leader>a", desc = "+ai/diff" },
           { mode = "n", keys = "<Leader>c", desc = "+claude/code" },
+          { mode = "n", keys = "<Leader>e", desc = "+explorer" },
           { mode = "n", keys = "<Leader>f", desc = "+find/format" },
           { mode = "n", keys = "<Leader>g", desc = "+git" },
           { mode = "n", keys = "<Leader>r", desc = "+refactor" },
