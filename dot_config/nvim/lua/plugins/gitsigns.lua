@@ -35,7 +35,7 @@ return {
         function()
           require("gitsigns").preview_hunk_inline()
         end,
-        desc = "Preview git hunk inline",
+        desc = "Preview git hunk inline (not popup)",
       },
       {
         "<leader>gb",
@@ -52,11 +52,27 @@ return {
         desc = "Stage git hunk",
       },
       {
+        "<leader>gs",
+        function()
+          require("gitsigns").stage_hunk({ vim.fn.line("."), vim.fn.line("v") })
+        end,
+        mode = "v",
+        desc = "Stage selected git hunk lines",
+      },
+      {
         "<leader>gr",
         function()
           require("gitsigns").reset_hunk()
         end,
         desc = "Reset git hunk",
+      },
+      {
+        "<leader>gr",
+        function()
+          require("gitsigns").reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
+        end,
+        mode = "v",
+        desc = "Reset selected git hunk lines",
       },
       {
         "<leader>gu",
